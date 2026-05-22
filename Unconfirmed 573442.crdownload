@@ -1,0 +1,341 @@
+const themeToggle = document.getElementById("themeToggle");
+const aiToggle = document.getElementById("aiToggle");
+const emergencyToggle = document.getElementById("emergencyToggle");
+const overrideToggle = document.getElementById("overrideToggle");
+const maxVolumeRange = document.getElementById("maxVolumeRange");
+const simulateBurstButton = document.getElementById("simulateBurst");
+const visualizer = document.getElementById("visualizer");
+const meterProgress = document.getElementById("meterProgress");
+const alertPopup = document.getElementById("alertPopup");
+
+const ui = {
+  currentDb: document.getElementById("currentDb"),
+  liveDbHero: document.getElementById("liveDbHero"),
+  meterValue: document.getElementById("meterValue"),
+  zoneLabel: document.getElementById("zoneLabel"),
+  zoneChip: document.getElementById("zoneChip"),
+  maxVolumeDisplay: document.getElementById("maxVolumeDisplay"),
+  healthScore: document.getElementById("healthScore"),
+  healthScoreHero: document.getElementById("healthScoreHero"),
+  safeTime: document.getElementById("safeTime"),
+  unsafeTime: document.getElementById("unsafeTime"),
+  aiStatusText: document.getElementById("aiStatusText"),
+  adjustingIndicator: document.getElementById("adjustingIndicator"),
+  heroAiStatus: document.getElementById("heroAiStatus"),
+  aiToggleStatus: document.getElementById("aiToggleStatus"),
+  protectionMode: document.getElementById("protectionMode"),
+  deviceState: document.getElementById("deviceState"),
+  demoMode: document.getElementById("demoMode"),
+  demoMessage: document.getElementById("demoMessage"),
+  safeBar: document.getElementById("safeBar"),
+  unsafeBar: document.getElementById("unsafeBar"),
+  backendBadge: document.getElementById("backendBadge"),
+  backendStatusText: document.getElementById("backendStatusText")
+};
+
+const state = {
+  lastAlertId: null,
+  isSyncing: false
+};
+
+const meterCircumference = 2 * Math.PI * 60;
+const bars = [];
+let pollTimer = null;
+
+function createVisualizerBars() {
+  for (let index = 0; index < 24; index += 1) {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.animationDelay = `${index * 0.06}s`;
+    visualizer.appendChild(bar);
+    bars.push(bar);
+  }
+}
+
+function setupTheme() {
+  const savedTheme = localStorage.getItem("hearwell-theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light-mode");
+  }
+
+  themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("light-mode");
+    const theme = document.body.classList.contains("light-mode") ? "light" : "dark";
+    localStorage.setItem("hearwell-theme", theme);
+  });
+}
+
+function setupScrollButtons() {
+  document.querySelectorAll("[data-scroll]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const selector = button.getAttribute("data-scroll");
+      document.querySelector(selector)?.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+}
+
+function showAlert(message) {
+  alertPopup.querySelector("p").textContent = message;
+  alertPopup.classList.add("show");
+
+  window.clearTimeout(showAlert.timeoutId);
+  showAlert.timeoutId = window.setTimeout(() => {
+    alertPopup.classList.remove("show");
+  }, 2200);
+}
+
+function formatClock(totalSeconds) {
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function updateVisualizer(soundLevel, zoneColor) {
+  bars.forEach((bar, index) => {
+    const variance = Math.sin((Date.now() / 160) + index) * 12;
+    const height = Math.max(18, Math.min(100, soundLevel + variance));
+    bar.style.height = `${height}%`;
+    bar.style.background = `linear-gradient(180deg, rgba(255,255,255,0.12), ${zoneColor})`;
+  });
+}
+
+function updateMeter(soundLevel, zoneColor) {
+  const normalized = Math.min(100, soundLevel);
+  const offset = meterCircumference - (normalized / 100) * meterCircumference;
+  meterProgress.style.strokeDashoffset = `${offset}`;
+  meterProgress.style.stroke = zoneColor;
+}
+
+function updateHistoryChart(history) {
+  soundChart.data.labels = history.map((entry) => entry.time);
+  soundChart.data.datasets[0].data = history.map((entry) => entry.db);
+  soundChart.update("none");
+}
+
+function updateControls(settings) {
+  aiToggle.checked = settings.aiEnabled;
+  emergencyToggle.checked = settings.emergencyMode;
+  overrideToggle.checked = settings.manualOverride;
+  maxVolumeRange.value = settings.maxLimit;
+  ui.maxVolumeDisplay.textContent = `${settings.maxLimit} dB`;
+  ui.aiToggleStatus.textContent = settings.aiEnabled ? "AI ON" : "AI OFF";
+  ui.heroAiStatus.textContent = settings.aiEnabled ? "Active" : "Paused";
+}
+
+function updateExposure(summary) {
+  const total = summary.safeSeconds + summary.unsafeSeconds || 1;
+  ui.safeBar.style.width = `${(summary.safeSeconds / total) * 100}%`;
+  ui.unsafeBar.style.width = `${(summary.unsafeSeconds / total) * 100}%`;
+  ui.safeTime.textContent = formatClock(summary.safeSeconds);
+  ui.unsafeTime.textContent = formatClock(summary.unsafeSeconds);
+}
+
+function updateSummary(summary, settings, connectedDevice, bluetoothConnected) {
+  ui.currentDb.textContent = `${summary.currentDb} dB`;
+  ui.liveDbHero.textContent = `${summary.currentDb} dB`;
+  ui.meterValue.textContent = summary.currentDb;
+  ui.zoneLabel.textContent = summary.zone;
+  ui.zoneChip.textContent = summary.zoneChip;
+  ui.zoneChip.style.background = `${summary.zoneColor}22`;
+  ui.zoneChip.style.color = summary.zoneColor;
+  ui.healthScore.textContent = Math.round(summary.healthScore);
+  ui.healthScoreHero.textContent = Math.round(summary.healthScore);
+  ui.protectionMode.textContent = summary.protectionMode;
+  ui.aiStatusText.textContent = summary.aiMessage;
+  ui.demoMode.textContent = summary.zone.replace(" Zone", "");
+  ui.demoMessage.textContent = summary.demoMessage;
+  ui.deviceState.textContent = bluetoothConnected ? "Bluetooth Active" : "Bluetooth Offline";
+  ui.backendStatusText.textContent = summary.backendStatus;
+  ui.backendBadge.textContent = connectedDevice ? "Live API" : "Offline";
+
+  if (settings.aiEnabled) {
+    if (settings.manualOverride) {
+      ui.adjustingIndicator.innerHTML = '<span class="signal-dot"></span><span>Manual override enabled</span>';
+    } else if (summary.aiMessage.includes("adjusting")) {
+      ui.adjustingIndicator.innerHTML = '<span class="signal-dot"></span><span>AI adjusting volume...</span>';
+    } else if (settings.emergencyMode && summary.currentDb > settings.maxLimit) {
+      ui.adjustingIndicator.innerHTML = '<span class="signal-dot"></span><span>Emergency mode: brief spike tolerated</span>';
+    } else {
+      ui.adjustingIndicator.innerHTML = '<span class="signal-dot"></span><span>System stable</span>';
+    }
+  } else {
+    ui.adjustingIndicator.innerHTML = '<span class="signal-dot"></span><span>AI protection paused</span>';
+  }
+
+  updateVisualizer(summary.currentDb, summary.zoneColor);
+  updateMeter(summary.currentDb, summary.zoneColor);
+  updateExposure(summary);
+}
+
+function maybeShowLatestAlert(alerts) {
+  if (!alerts.length) {
+    return;
+  }
+
+  const latestAlert = alerts[alerts.length - 1];
+
+  if (latestAlert.id !== state.lastAlertId) {
+    state.lastAlertId = latestAlert.id;
+    showAlert(latestAlert.message);
+  }
+}
+
+async function fetchState() {
+  const response = await fetch("/api/state", {
+    headers: {
+      "Cache-Control": "no-store"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load backend state");
+  }
+
+  return response.json();
+}
+
+async function saveSettings(payload) {
+  if (state.isSyncing) {
+    return;
+  }
+
+  state.isSyncing = true;
+
+  try {
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to save settings");
+    }
+
+    const backendState = await response.json();
+    renderBackendState(backendState);
+  } catch (error) {
+    showAlert("Backend sync failed. Check that the HearWell server is running.");
+    ui.backendStatusText.textContent = "Backend connection failed";
+    ui.backendBadge.textContent = "Offline";
+  } finally {
+    state.isSyncing = false;
+  }
+}
+
+async function triggerBurst() {
+  try {
+    await fetch("/api/simulate/burst", {
+      method: "POST"
+    });
+  } catch (error) {
+    showAlert("Unable to trigger loud burst because the backend is not reachable.");
+  }
+}
+
+function renderBackendState(backendState) {
+  updateControls(backendState.settings);
+  updateSummary(
+    backendState.summary,
+    backendState.settings,
+    backendState.connectedDevice,
+    backendState.bluetoothConnected
+  );
+  updateHistoryChart(backendState.telemetryHistory);
+  maybeShowLatestAlert(backendState.alerts);
+}
+
+async function pollBackend() {
+  try {
+    const backendState = await fetchState();
+    renderBackendState(backendState);
+  } catch (error) {
+    ui.backendStatusText.textContent = "Backend connection failed";
+    ui.backendBadge.textContent = "Offline";
+  }
+}
+
+function bindControls() {
+  aiToggle.addEventListener("change", () => {
+    saveSettings({ aiEnabled: aiToggle.checked });
+  });
+
+  emergencyToggle.addEventListener("change", () => {
+    saveSettings({ emergencyMode: emergencyToggle.checked });
+  });
+
+  overrideToggle.addEventListener("change", () => {
+    saveSettings({ manualOverride: overrideToggle.checked });
+  });
+
+  maxVolumeRange.addEventListener("input", () => {
+    ui.maxVolumeDisplay.textContent = `${maxVolumeRange.value} dB`;
+  });
+
+  maxVolumeRange.addEventListener("change", () => {
+    saveSettings({ maxLimit: Number(maxVolumeRange.value) });
+  });
+
+  simulateBurstButton.addEventListener("click", () => {
+    triggerBurst();
+  });
+}
+
+const soundChart = new Chart(document.getElementById("soundChart"), {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Sound Level (dB)",
+        data: [],
+        borderColor: "#5ce1e6",
+        backgroundColor: "rgba(92, 225, 230, 0.14)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        borderWidth: 3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        grid: {
+          color: "rgba(255,255,255,0.08)"
+        },
+        ticks: {
+          color: "#96afc8"
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxTicksLimit: 5,
+          color: "#96afc8"
+        }
+      }
+    }
+  }
+});
+
+createVisualizerBars();
+setupTheme();
+setupScrollButtons();
+bindControls();
+pollBackend();
+pollTimer = window.setInterval(pollBackend, 1000);

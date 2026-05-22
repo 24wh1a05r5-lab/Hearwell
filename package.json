@@ -1,0 +1,9 @@
+{
+  "name": "hearwell-backend",
+  "version": "1.0.0",
+  "description": "HearWell AI-driven Bluetooth hearing protection demo with a minimal Node backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

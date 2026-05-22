@@ -1,0 +1,303 @@
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const { URL } = require("url");
+
+const PORT = process.env.PORT || 3000;
+const ROOT = __dirname;
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon"
+};
+
+const appState = {
+  connectedDevice: "HearWell Buds",
+  bluetoothConnected: true,
+  settings: {
+    aiEnabled: true,
+    emergencyMode: false,
+    manualOverride: false,
+    maxLimit: 80
+  },
+  summary: {
+    currentDb: 62,
+    rawDb: 62,
+    healthScore: 94,
+    safeSeconds: 0,
+    unsafeSeconds: 0,
+    zone: "Safe Zone",
+    zoneChip: "Green",
+    zoneColor: "#49e79a",
+    protectionMode: "Balanced",
+    aiMessage: "AI monitoring safe audio conditions",
+    demoMessage: "AI is ready to protect your hearing.",
+    backendStatus: "Backend synced successfully",
+    backendOnline: true
+  },
+  telemetryHistory: [],
+  alerts: [],
+  forceBurstTicks: 0
+};
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getZone(soundLevel) {
+  if (soundLevel <= 60) {
+    return {
+      zone: "Safe Zone",
+      zoneChip: "Green",
+      zoneColor: "#49e79a",
+      protectionMode: "Balanced"
+    };
+  }
+
+  if (soundLevel <= 80) {
+    return {
+      zone: "Moderate Zone",
+      zoneChip: "Yellow",
+      zoneColor: "#ffc857",
+      protectionMode: "Monitoring"
+    };
+  }
+
+  return {
+    zone: "Danger Zone",
+    zoneChip: "Red",
+    zoneColor: "#ff6b6b",
+    protectionMode: "Protective"
+  };
+}
+
+function addAlert(message) {
+  appState.alerts.push({
+    id: Date.now(),
+    message,
+    createdAt: new Date().toISOString()
+  });
+
+  if (appState.alerts.length > 10) {
+    appState.alerts.shift();
+  }
+}
+
+function simulateRawSoundLevel() {
+  const base = 54 + Math.random() * 36;
+  const wave = Math.sin(Date.now() / 1400) * 8;
+  let nextLevel = base + wave;
+
+  if (appState.forceBurstTicks > 0) {
+    nextLevel = 88 + Math.random() * 10;
+    appState.forceBurstTicks -= 1;
+  }
+
+  if (appState.settings.emergencyMode) {
+    nextLevel += Math.random() * 6;
+  }
+
+  if (appState.settings.manualOverride) {
+    nextLevel += Math.random() * 4;
+  }
+
+  return clamp(nextLevel, 40, 98);
+}
+
+function runSimulationTick() {
+  const rawDb = simulateRawSoundLevel();
+  const { settings, summary } = appState;
+  let currentDb = rawDb;
+  let aiMessage = "AI monitoring safe audio conditions";
+  let demoMessage = "AI is ready to protect your hearing.";
+
+  if (!settings.aiEnabled) {
+    aiMessage = "AI protection is off. Alerts remain active for unsafe listening.";
+    if (rawDb > settings.maxLimit) {
+      addAlert("Unsafe audio detected. Turn AI protection back on for automatic volume control.");
+    }
+  } else if (settings.manualOverride) {
+    aiMessage = "User override is allowing manual listening control";
+    if (rawDb > settings.maxLimit) {
+      addAlert("Manual override is active while audio is above the safe limit.");
+    }
+  } else if (rawDb > settings.maxLimit && !settings.emergencyMode) {
+    currentDb = Math.max(40, settings.maxLimit - 4);
+    aiMessage = "AI adjusting volume...";
+    demoMessage = "HearWell detected a risk spike and intervened automatically.";
+    addAlert("AI is reducing the volume to stay within the safe listening range.");
+  } else if (rawDb > settings.maxLimit && settings.emergencyMode) {
+    aiMessage = "Emergency mode allows short high-volume bursts";
+    demoMessage = "Emergency listening enabled for temporary critical audio.";
+  }
+
+  const zoneData = getZone(currentDb);
+
+  if (currentDb > settings.maxLimit) {
+    summary.unsafeSeconds += 1;
+    summary.healthScore = clamp(summary.healthScore - 0.8, 20, 100);
+  } else {
+    summary.safeSeconds += 1;
+    summary.healthScore = clamp(summary.healthScore + 0.25, 35, 100);
+  }
+
+  summary.currentDb = Math.round(currentDb);
+  summary.rawDb = Math.round(rawDb);
+  summary.aiMessage = aiMessage;
+  summary.demoMessage = demoMessage;
+  summary.zone = zoneData.zone;
+  summary.zoneChip = zoneData.zoneChip;
+  summary.zoneColor = zoneData.zoneColor;
+  summary.protectionMode = zoneData.protectionMode;
+
+  appState.telemetryHistory.push({
+    time: new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }),
+    db: summary.currentDb
+  });
+
+  if (appState.telemetryHistory.length > 16) {
+    appState.telemetryHistory.shift();
+  }
+}
+
+function buildResponseState() {
+  return {
+    connectedDevice: appState.connectedDevice,
+    bluetoothConnected: appState.bluetoothConnected,
+    settings: appState.settings,
+    summary: appState.summary,
+    telemetryHistory: appState.telemetryHistory,
+    alerts: appState.alerts
+  };
+}
+
+function sendJson(response, statusCode, data) {
+  response.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  response.end(JSON.stringify(data));
+}
+
+function serveStaticFile(requestPath, response) {
+  const safePath = requestPath === "/" ? "/index.html" : requestPath;
+  const filePath = path.join(ROOT, safePath);
+  const normalizedPath = path.normalize(filePath);
+
+  if (!normalizedPath.startsWith(ROOT)) {
+    sendJson(response, 403, { error: "Forbidden" });
+    return;
+  }
+
+  fs.readFile(normalizedPath, (error, content) => {
+    if (error) {
+      if (error.code === "ENOENT") {
+        sendJson(response, 404, { error: "Not found" });
+        return;
+      }
+
+      sendJson(response, 500, { error: "Unable to read file" });
+      return;
+    }
+
+    const ext = path.extname(normalizedPath).toLowerCase();
+    response.writeHead(200, {
+      "Content-Type": mimeTypes[ext] || "application/octet-stream"
+    });
+    response.end(content);
+  });
+}
+
+function readRequestBody(request) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+
+    request.on("data", (chunk) => {
+      raw += chunk;
+
+      if (raw.length > 1e6) {
+        reject(new Error("Payload too large"));
+      }
+    });
+
+    request.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(raw));
+      } catch (error) {
+        reject(new Error("Invalid JSON"));
+      }
+    });
+
+    request.on("error", reject);
+  });
+}
+
+const server = http.createServer(async (request, response) => {
+  const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/state") {
+    sendJson(response, 200, buildResponseState());
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/settings") {
+    try {
+      const body = await readRequestBody(request);
+      const nextSettings = {
+        aiEnabled: typeof body.aiEnabled === "boolean" ? body.aiEnabled : appState.settings.aiEnabled,
+        emergencyMode: typeof body.emergencyMode === "boolean" ? body.emergencyMode : appState.settings.emergencyMode,
+        manualOverride: typeof body.manualOverride === "boolean" ? body.manualOverride : appState.settings.manualOverride,
+        maxLimit:
+          typeof body.maxLimit === "number" ? clamp(Math.round(body.maxLimit), 60, 95) : appState.settings.maxLimit
+      };
+
+      appState.settings = nextSettings;
+      sendJson(response, 200, buildResponseState());
+    } catch (error) {
+      sendJson(response, 400, { error: error.message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/simulate/burst") {
+    appState.forceBurstTicks = 4;
+    addAlert("Simulated loud burst incoming. HearWell is preparing to respond.");
+    sendJson(response, 200, { ok: true, message: "Burst queued" });
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/alerts") {
+    sendJson(response, 200, { alerts: appState.alerts });
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname.startsWith("/api/")) {
+    sendJson(response, 404, { error: "API route not found" });
+    return;
+  }
+
+  serveStaticFile(requestUrl.pathname, response);
+});
+
+runSimulationTick();
+setInterval(runSimulationTick, 1000);
+
+server.listen(PORT, () => {
+  console.log(`HearWell server running on http://localhost:${PORT}`);
+});

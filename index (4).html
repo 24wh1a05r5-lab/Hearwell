@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HearWell | Bluetooth Hearing Protection System</title>
+    <meta
+      name="description"
+      content="HearWell monitors Bluetooth earbud usage, detects unsafe sound exposure, and automatically applies hearing protection controls."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="script.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#hero">
+          <span class="brand-mark">H</span>
+          <div>
+            <strong>HearWell</strong>
+            <span>AI Hearing Protection</span>
+          </div>
+        </a>
+        <nav class="nav">
+          <a href="#about">About</a>
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#dashboard">Dashboard</a>
+          <a href="#demo">Demo</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div class="topbar-actions">
+          <button class="secondary-button" id="authTrigger">Login / Register</button>
+          <button id="themeToggle" class="icon-button" aria-label="Toggle dark mode">
+            <span class="theme-icon">DM</span>
+          </button>
+          <button class="primary-button" data-scroll="#dashboard">Open Dashboard</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="hero" class="hero">
+          <div class="hero-copy reveal">
+            <p class="eyebrow">Bluetooth Safety Intelligence</p>
+            <h1>HearWell: Bluetooth Earbud Usage Protection</h1>
+            <p class="hero-text">
+              A hearing protection web app focused on Bluetooth earbud and earphone
+              usage tracking. It monitors live sound exposure, detects unsafe listening
+              conditions, and automatically pushes protective controls before damage occurs.
+            </p>
+            <div class="hero-actions">
+              <button class="primary-button" data-scroll="#demo">Watch Live Demo</button>
+              <button class="secondary-button" data-scroll="#about">Explore System</button>
+            </div>
+            <div class="hero-badges">
+              <span>Connected Device: <strong id="heroDeviceName">No device</strong></span>
+              <span>Safe Range: <strong>60-80 dB</strong></span>
+              <span>AI Protection: <strong id="heroAiStatus">Active</strong></span>
+              <span>User Session: <strong id="sessionBadge">Guest</strong></span>
+            </div>
+          </div>
+
+          <div class="hero-panel reveal delay-1">
+            <div class="glass-card hero-card">
+              <div class="card-head">
+                <div>
+                  <p class="panel-label">Live Bluetooth Link</p>
+                  <h2>HearWell Buds</h2>
+                </div>
+                <span class="status-pill online" id="heroDeviceStatus">Ready</span>
+              </div>
+
+              <div class="device-surface">
+                <div class="orbital-ring ring-one"></div>
+                <div class="orbital-ring ring-two"></div>
+                <div class="earbud-core">
+                  <span>AI</span>
+                </div>
+                <div class="signal-grid">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+
+              <div class="device-stats">
+                <div>
+                  <span>Current Sound</span>
+                  <strong id="liveDbHero">62 dB</strong>
+                </div>
+                <div>
+                  <span>Protection Mode</span>
+                  <strong id="protectionMode">Balanced</strong>
+                </div>
+                <div>
+                  <span>Health Score</span>
+                  <strong id="healthScoreHero">94</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="about" class="section split-section">
+          <div class="section-copy reveal">
+            <p class="eyebrow">Problem Statement</p>
+            <h2>Why adaptive hearing protection matters</h2>
+            <p>
+              Prolonged exposure to high audio levels through wireless earbuds can cause
+              hearing fatigue, tinnitus, and permanent damage. Most systems only show
+              warnings. HearWell goes further by intelligently enforcing protective
+              sound limits, tracking earbud listening health over time, and reacting
+              when Bluetooth-connected listening becomes unsafe.
+            </p>
+          </div>
+          <div class="glass-card problem-card reveal delay-1">
+            <div class="problem-flow">
+              <div>
+                <span class="flow-title">Risk</span>
+                <p>Unsafe sound spikes pass through conventional earbuds with no intervention.</p>
+              </div>
+              <div>
+                <span class="flow-title">AI Response</span>
+                <p>HearWell predicts unsafe exposure and triggers a protective reduction before risk persists.</p>
+              </div>
+              <div>
+                <span class="flow-title">Outcome</span>
+                <p>Safer listening, lower exposure time, and healthier long-term hearing habits.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" class="section">
+          <div class="section-heading reveal">
+            <p class="eyebrow">System Capabilities</p>
+            <h2>Built like a real AI healthcare companion</h2>
+          </div>
+          <div class="feature-grid">
+            <article class="glass-card feature-card reveal">
+              <span class="feature-icon">BT</span>
+              <h3>Bluetooth Earbud Tracking</h3>
+              <p>Monitor Bluetooth device pairing state and keep a live record of earbud or earphone sessions.</p>
+            </article>
+            <article class="glass-card feature-card reveal delay-1">
+              <span class="feature-icon">EQ</span>
+              <h3>Dynamic Motion Visualizer</h3>
+              <p>Animated bars, circular meter, and live intensity zones for instant audio awareness.</p>
+            </article>
+            <article class="glass-card feature-card reveal delay-2">
+              <span class="feature-icon">AI</span>
+              <h3>AI Volume Control</h3>
+              <p>Automatic protection kicks in when sound crosses safe thresholds and risk rises.</p>
+            </article>
+            <article class="glass-card feature-card reveal">
+              <span class="feature-icon">UP</span>
+              <h3>Live Dashboard</h3>
+              <p>Chart.js tracking, hearing score analytics, and safe versus unsafe exposure timing.</p>
+            </article>
+            <article class="glass-card feature-card reveal delay-1">
+              <span class="feature-icon">!</span>
+              <h3>Alert System</h3>
+              <p>Responsive warnings, emergency listening mode, and manual override safeguards.</p>
+            </article>
+            <article class="glass-card feature-card reveal delay-2">
+              <span class="feature-icon">UX</span>
+              <h3>Adaptive Interface</h3>
+              <p>Responsive layout, persistent dark mode, fluid animations, and touch-friendly controls.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="how-it-works" class="section split-section how-section">
+          <div class="glass-card flow-card reveal">
+            <div class="step-item">
+              <span>1</span>
+              <div>
+                <h3>Monitor</h3>
+                <p>HearWell watches Bluetooth listening sessions and microphone-detected sound levels in real time.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span>2</span>
+              <div>
+                <h3>Analyze</h3>
+                <p>AI compares the detected exposure level with the user limit and safe listening range.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span>3</span>
+              <div>
+                <h3>Protect</h3>
+                <p>Protective response is triggered, alerts are shown, and the health score adjusts in real time.</p>
+              </div>
+            </div>
+          </div>
+          <div class="section-copy reveal delay-1">
+            <p class="eyebrow">How It Works</p>
+            <h2>Protection that reacts before damage happens</h2>
+            <p>
+              HearWell blends Bluetooth pairing, microphone-assisted sound detection,
+              adaptive thresholds, and live feedback to create a smart listening experience.
+            </p>
+          </div>
+        </section>
+
+        <section id="dashboard" class="section dashboard-section">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Live Dashboard</p>
+            <h2>Real-time hearing protection command center</h2>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="glass-card dashboard-main reveal">
+              <div class="panel-top">
+                <div>
+                  <p class="panel-label">Connected Device</p>
+                  <h3 id="deviceName">No device paired</h3>
+                </div>
+                <span class="status-pill pulse" id="deviceState">Waiting for Bluetooth</span>
+              </div>
+
+              <div class="metrics-row">
+                <div class="metric-card">
+                  <span>Sound Level</span>
+                  <strong id="currentDb">62 dB</strong>
+                  <small id="zoneLabel">Safe Zone</small>
+                </div>
+                <div class="metric-card">
+                  <span>Hearing Health</span>
+                  <strong id="healthScore">94</strong>
+                  <small>out of 100</small>
+                </div>
+                <div class="metric-card">
+                  <span>Volume Limit</span>
+                  <strong id="maxVolumeDisplay">80 dB</strong>
+                  <small>custom threshold</small>
+                </div>
+                <div class="metric-card">
+                  <span>Current User</span>
+                  <strong id="activeUserName">Guest</strong>
+                  <small>login enabled</small>
+                </div>
+              </div>
+
+              <div class="glass-card bluetooth-panel">
+                <div class="visualizer-head">
+                  <div>
+                    <p class="panel-label">Bluetooth Monitoring</p>
+                    <h4>EarPods / Earphones Tracking</h4>
+                  </div>
+                  <span class="status-pill" id="bluetoothStatus">Not paired</span>
+                </div>
+                <div class="bluetooth-grid">
+                  <div class="bluetooth-stat">
+                    <span>Device Type</span>
+                    <strong id="deviceTypeLabel">Earbuds / headset</strong>
+                  </div>
+                  <div class="bluetooth-stat">
+                    <span>Listening Session</span>
+                    <strong id="listeningSession">00:00</strong>
+                  </div>
+                  <div class="bluetooth-stat">
+                    <span>Detected Mode</span>
+                    <strong id="detectionMode">Microphone monitor</strong>
+                  </div>
+                </div>
+                <div class="bluetooth-actions">
+                  <button class="primary-button" id="connectBluetooth">Pair Bluetooth Device</button>
+                  <button class="secondary-button" id="startMonitoring">Start Sound Monitoring</button>
+                </div>
+                <p class="helper-text" id="bluetoothHelper">
+                  Works best in supported browsers. Bluetooth pairing and microphone access may require permission.
+                </p>
+              </div>
+
+              <div class="visual-grid">
+                <div class="visualizer-card">
+                  <div class="visualizer-head">
+                    <h4>Real-Time Audio Visualizer</h4>
+                    <span class="zone-chip" id="zoneChip">Green</span>
+                  </div>
+                  <div class="zone-scale">
+                    <span class="zone-green">0-60 dB</span>
+                    <span class="zone-yellow">60-80 dB</span>
+                    <span class="zone-red">80+ dB</span>
+                  </div>
+                  <div id="visualizer" class="visualizer" aria-label="Animated audio visualizer"></div>
+                  <p class="helper-text">Color intensity shifts with safe, moderate, and danger zones.</p>
+                </div>
+
+                <div class="meter-card">
+                  <h4>Circular Volume Meter</h4>
+                  <div class="meter-wrap">
+                    <div class="meter-glow"></div>
+                    <svg class="meter-svg" viewBox="0 0 160 160" aria-hidden="true">
+                      <circle cx="80" cy="80" r="60" class="meter-track"></circle>
+                      <circle cx="80" cy="80" r="60" class="meter-progress" id="meterProgress"></circle>
+                    </svg>
+                    <div class="meter-center">
+                      <strong id="meterValue">62</strong>
+                      <span>dB</span>
+                    </div>
+                  </div>
+                  <div class="ai-status" id="aiStatusText">AI monitoring safe audio conditions</div>
+                </div>
+              </div>
+
+              <div class="chart-card">
+                <div class="visualizer-head">
+                  <h4>Sound Levels Over Time</h4>
+                  <span class="chart-live">LIVE</span>
+                </div>
+                <canvas id="soundChart"></canvas>
+              </div>
+            </div>
+
+            <aside class="glass-card dashboard-side reveal delay-1">
+              <div class="control-group">
+                <div class="control-head">
+                  <h3>User Controls</h3>
+                  <span class="status-pill" id="aiToggleStatus">AI ON</span>
+                </div>
+                <div class="switch-row">
+                  <span>AI Protection</span>
+                  <label class="switch">
+                    <input type="checkbox" id="aiToggle" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <label class="range-control">
+                  <span>Maximum Volume Limit</span>
+                  <input type="range" id="maxVolumeRange" min="60" max="95" value="80" />
+                </label>
+                <div class="switch-row">
+                  <span>Emergency Mode</span>
+                  <label class="switch">
+                    <input type="checkbox" id="emergencyToggle" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="switch-row">
+                  <span>Manual Override</span>
+                  <label class="switch">
+                    <input type="checkbox" id="overrideToggle" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="switch-row">
+                  <span>Auto Control</span>
+                  <label class="switch">
+                    <input type="checkbox" id="autoControlToggle" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <h3>Exposure Tracking</h3>
+                <div class="exposure-grid">
+                  <div>
+                    <span>Safe Time</span>
+                    <strong id="safeTime">00:00</strong>
+                  </div>
+                  <div>
+                    <span>Unsafe Time</span>
+                    <strong id="unsafeTime">00:00</strong>
+                  </div>
+                </div>
+                <div class="progress-pair">
+                  <div>
+                    <span>Protected Listening</span>
+                    <div class="mini-bar"><i id="safeBar"></i></div>
+                  </div>
+                  <div>
+                    <span>Risk Exposure</span>
+                    <div class="mini-bar danger"><i id="unsafeBar"></i></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <h3>AI Intervention</h3>
+                <div id="adjustingIndicator" class="adjusting-indicator">
+                  <span class="signal-dot"></span>
+                  <span>System stable</span>
+                </div>
+                <p class="helper-text">
+                  When levels exceed your limit, HearWell records the unsafe event and applies a protective reduction factor in real time.
+                </p>
+              </div>
+
+              <div class="control-group">
+                <h3>Protection Summary</h3>
+                <div class="adjusting-indicator">
+                  <span class="signal-dot"></span>
+                  <span id="backendStatusText">Local monitoring logic ready.</span>
+                </div>
+                <p class="helper-text">
+                  This demo uses browser permissions, local session storage, and on-device sound analysis for earphone usage protection.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="demo" class="section split-section demo-section">
+          <div class="section-copy reveal">
+            <p class="eyebrow">Live Demo</p>
+            <h2>See the adaptive response in action</h2>
+            <p>
+              The demo continuously simulates changing sound pressure levels, Bluetooth usage tracking,
+              visual feedback, AI intervention, and emergency tolerance for short bursts when needed.
+            </p>
+            <button class="primary-button" id="simulateBurst">Trigger Loud Burst</button>
+          </div>
+          <div class="glass-card demo-panel reveal delay-1">
+            <div class="demo-status">
+              <span class="status-pill" id="demoMode">Monitoring</span>
+              <strong id="demoMessage">AI is ready to protect your hearing.</strong>
+            </div>
+            <div class="demo-wave">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" class="section contact-section reveal">
+          <div class="glass-card contact-card">
+            <p class="eyebrow">Contact</p>
+            <h2>Designing safer listening for the future</h2>
+            <p>
+              HearWell showcases how AI, Bluetooth wearables, and live audio intelligence can work
+              together to create a safer digital health ecosystem.
+            </p>
+            <a class="primary-button" href="mailto:hello@hearwell.ai">hello@hearwell.ai</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="alertPopup" class="alert-popup" role="alert" aria-live="assertive">
+      <strong>Unsafe audio detected</strong>
+      <p>AI is reducing volume to protect your hearing.</p>
+    </div>
+
+    <div class="auth-modal" id="authModal" aria-hidden="true">
+      <div class="auth-card glass-card">
+        <button class="icon-button auth-close" id="authClose" aria-label="Close login dialog">X</button>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-tab="login">Login</button>
+          <button class="auth-tab" data-auth-tab="register">Register</button>
+        </div>
+
+        <div class="auth-panel active" id="loginPanel">
+          <p class="eyebrow">Welcome Back</p>
+          <h2>Login to your hearing dashboard</h2>
+          <form id="loginForm" class="auth-form">
+            <label>
+              <span>Email</span>
+              <input type="email" id="loginEmail" placeholder="you@example.com" required />
+            </label>
+            <label>
+              <span>Password</span>
+              <input type="password" id="loginPassword" placeholder="Enter password" required />
+            </label>
+            <button type="submit" class="primary-button">Login</button>
+          </form>
+        </div>
+
+        <div class="auth-panel" id="registerPanel">
+          <p class="eyebrow">Create Account</p>
+          <h2>Register for protected listening</h2>
+          <form id="registerForm" class="auth-form">
+            <label>
+              <span>Full Name</span>
+              <input type="text" id="registerName" placeholder="Your name" required />
+            </label>
+            <label>
+              <span>Email</span>
+              <input type="email" id="registerEmail" placeholder="you@example.com" required />
+            </label>
+            <label>
+              <span>Password</span>
+              <input type="password" id="registerPassword" placeholder="Create password" required />
+            </label>
+            <button type="submit" class="primary-button">Create account</button>
+          </form>
+        </div>
+
+        <p class="helper-text auth-feedback" id="authFeedback">
+          Register or login to keep personal hearing limits and Bluetooth session tracking.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
